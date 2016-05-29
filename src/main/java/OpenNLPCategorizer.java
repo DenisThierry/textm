@@ -36,7 +36,7 @@ public class OpenNLPCategorizer {
     public void trainModel() {
         InputStream dataIn = null;
         try {
-            dataIn = new FileInputStream("/Users/chillingwithasmile/Downloads/tweets.txt");
+            dataIn = new FileInputStream("ressources/tweets.txt");
             ObjectStream lineStream = new PlainTextByLineStream(dataIn, "UTF-8");
             ObjectStream sampleStream = new DocumentSampleStream(lineStream);
 
@@ -64,7 +64,7 @@ public class OpenNLPCategorizer {
     public void catModel() {
         OutputStream modelOut = null;
         try {
-            modelOut = new BufferedOutputStream(new FileOutputStream("/Users/chillingwithasmile/Downloads/twitterSen.bin"));
+            modelOut = new BufferedOutputStream(new FileOutputStream("ressources/twitterSen.bin"));
             model.serialize(modelOut);
         } catch (IOException e) {
             e.printStackTrace();
@@ -82,7 +82,7 @@ public class OpenNLPCategorizer {
     public void catTest(String inputText) {
         InputStream modelIn = null;
         try {
-            modelIn = new FileInputStream("/Users/chillingwithasmile/Downloads/twitterSen.bin");
+            modelIn = new FileInputStream("ressources/twitterSen.bin");
             model = new DoccatModel(modelIn);
             DocumentCategorizerME myCategorizer = new DocumentCategorizerME(model);
 
