@@ -16,21 +16,18 @@ import twitter4j.conf.ConfigurationBuilder;
 
 public class TwitterTweets {
 
-	public void getAllTweets(){
-		
+	public void getAllTweets() {
+
 		ConfigurationBuilder cf = new ConfigurationBuilder();
 
-		cf.setDebugEnabled(true).setOAuthConsumerKey("")
-		.setOAuthConsumerSecret("")
-		.setOAuthAccessToken("")
-		.setOAuthAccessTokenSecret("");
+		cf.setDebugEnabled(true).setOAuthConsumerKey("").setOAuthConsumerSecret("").setOAuthAccessToken("")
+				.setOAuthAccessTokenSecret("");
 
 		TwitterFactory tf = new TwitterFactory(cf.build());
 		twitter4j.Twitter twitter = tf.getInstance();
-		
-		
+
 		int pageno = 1;
-	
+
 		/*
 		 * Liste für alle Tweets
 		 */
@@ -38,48 +35,47 @@ public class TwitterTweets {
 		List<String> allTweetsClinton = new ArrayList<String>();
 		String tweetsTrump;
 		String tweetsClinton;
-		
-		
+
 		while (true) {
 
-			  try {
+			try {
 
-			    int size = allTweetsClinton.size(); 
-			    int sizes = allTweetsTrump.size();
-		
-			    /*
-			     * Paging page = new Paging(pageno++, 200);
-			     * pageno++ --> damit alle seiten durchgelaufen werden bis zum Ende 
-			     * 200 --> pro Seite kann Twitter 200 Tweets ausgeben 
-			     */
-			    Paging page = new Paging(pageno++, 200);
-			    
-			    /*
-			     * Zugriff auf alle Tweets von Trump und Clinton
-			     */
-			    List<Status> atweetsClinton = twitter.getUserTimeline("HillaryClinton", page);
-			    List<Status> firstTweetsTrump = twitter.getUserTimeline("realDonaldTrump", page);
-			    /*
-			     * Listeninhalt durchlaufen und für alle Tweets nur Namen und Tweet auslesen und in eine neue Liste einfügen
-			     */
-			    for (Status st : atweetsClinton) {
-			    	tweetsClinton =  st.getCreatedAt() + " - " + st.getText() ;
+				int size = allTweetsClinton.size();
+				int sizes = allTweetsTrump.size();
+
+				/*
+				 * Paging page = new Paging(pageno++, 200); pageno++ --> damit
+				 * alle seiten iteriert werden bis zum Ende 200 --> pro Seite
+				 * kann Twitter 200 Tweets ausgeben
+				 */
+				Paging page = new Paging(pageno++, 200);
+
+				/*
+				 * Zugriff auf alle Tweets von Trump und Clinton
+				 */
+				List<Status> atweetsClinton = twitter.getUserTimeline("HillaryClinton", page);
+				List<Status> firstTweetsTrump = twitter.getUserTimeline("realDonaldTrump", page);
+				/*
+				 * Listeninhalt durchlaufen und für alle Tweets nur Tweet
+				 * auslesen und in eine neue Liste einfügen
+				 */
+				for (Status st : atweetsClinton) {
+					tweetsClinton = st.getText();
 					allTweetsClinton.add(tweetsClinton);
 				}
-			    
-			    for (Status st : firstTweetsTrump) {
-					tweetsTrump =  st.getCreatedAt() +  " - " + st.getText() ;
+
+				for (Status st : firstTweetsTrump) {
+					tweetsTrump = st.getText();
 					allTweetsTrump.add(tweetsTrump);
 				}
-			    
-			    if (allTweetsClinton.size() == size && allTweetsTrump.size() == sizes) 
-			      break;
-			    
-			  } 
-			  catch(TwitterException e) {
-			    e.printStackTrace();
-			  }
+
+				if (allTweetsClinton.size() == size && allTweetsTrump.size() == sizes)
+					break;
+
+			} catch (TwitterException e) {
+				e.printStackTrace();
 			}
+		}
 
 		listInDatei(allTweetsTrump, new File("ressources/trumptweetswithRT.txt"));
 		listInDatei(allTweetsClinton, new File("ressources/clintontweetswithRT.txt"));
@@ -105,6 +101,8 @@ public class TwitterTweets {
 				printWriter.close();
 
 		}
-	}
-	}
 
+		CleanTweets cleantweets = new CleanTweets();
+		cleantweets.cleanTweets();
+	}
+}
