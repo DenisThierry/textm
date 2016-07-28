@@ -23,6 +23,6 @@ ansehen, fügen sie diese in die Klasse TwitterTweets, an den Stellen:
 setOAuthConsumerKey, setOAuthConsumerSecret, setOAuthAccessToken und 
 setOAuthAccessTokenSecret an die Stelle der x-en ein.
 
-5) Nun ist das Programm bereit zum laufen.
+5) Nun ist das Programm bereit zum Laufen.
 
 
