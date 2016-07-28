@@ -44,14 +44,31 @@ public class CleanTweets {
 			e.printStackTrace();
 		}
 
-		/**
+		/*
 		 * Regulärer Asudruck zum Filtern der Retweets
 		 */
-		Pattern p = Pattern.compile(".*RT @[A-Za-z_]+:.*\n");
+		
+		// entfernen von Retweets
+		Pattern p = Pattern.compile(".*RT @[A-Za-z1-9]+:.*\n");
+		// entfernen von Links
+		Pattern phttp = Pattern.compile("\\b(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|]");
+		// entfernen von Hashtags
+		Pattern phash = Pattern.compile("[#][A-Za-z].*\n");
+		
 		Matcher mtrump = p.matcher(fulltweetsTrump);
 		Matcher mclinton = p.matcher(fulltweetsClinton);
 		fulltweetsTrump = mtrump.replaceAll("");
 		fulltweetsClinton = mclinton.replaceAll("");
+		
+		Matcher mtrumphttp = phttp.matcher(fulltweetsTrump);
+		Matcher mclintonhttp = phttp.matcher(fulltweetsClinton);
+		fulltweetsClinton = mclintonhttp.replaceAll("");
+		fulltweetsTrump = mtrumphttp.replaceAll("");
+		
+		Matcher mtrumphash = phash.matcher(fulltweetsTrump);
+		Matcher mclintonhash = phash.matcher(fulltweetsClinton);
+		fulltweetsTrump = mtrumphash.replaceAll("");
+		fulltweetsClinton = mclintonhash.replaceAll("");
 
 		/**
 		 * Gefilterte Tweets für die Ausgabe der .txt Datei in eine Liste
