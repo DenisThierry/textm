@@ -3,56 +3,60 @@
  */
 
 import java.io.*;
-
 import opennlp.tools.doccat.*;
-import opennlp.tools.tokenize.WhitespaceTokenizer;
 import opennlp.tools.util.MarkableFileInputStreamFactory;
 import opennlp.tools.util.ObjectStream;
 import opennlp.tools.util.PlainTextByLineStream;
 import opennlp.tools.util.TrainingParameters;
 
 public class OpenNLPCategorizer {
-    DoccatModel model = null;
-    String inputText = null;
+    private DoccatModel model = null;
+    public static final String RES = "ressources/";
 
+    // Boolean Werte ändern um entsprechende Twitter Methoden bzw. Klassen auszuführen!!!!!!!!!!
+    private static final boolean TWEETS = false;
+    private static final boolean SENTIMENTS = true;
+
+
+    /**
+     *   Main Methode, setzen der Boolean Variablen auf jeweils false oder true ermöglicht entweder
+     *   das Ausführen der Sentiment Analyse oder Abruf, Reinigung und Speicherung der Tweets
+     * */
     public static void main(String[] args) {
         OpenNLPCategorizer twitterCategorizer = new OpenNLPCategorizer();
-        twitterCategorizer.trainModel();
-        twitterCategorizer.catModel();
-        twitterCategorizer.catInput();
 
-/*        String[] inputTexts = {"I hate tea", "I am sick of this tea", "I am tired of drinking tea", "i really do not like tea", "tea isn't exactly my favorite beverage"};
-        for (String inputText : inputTexts) {
-            twitterCategorizer.catTest(inputText);
-        }*/
+        if (TWEETS) {
+            TwitterTweets tt = new TwitterTweets();
+            tt.getAllTweets();
+        }
+
+        if (SENTIMENTS) {
+            twitterCategorizer.trainModel();
+            twitterCategorizer.catModel();
+            twitterCategorizer.catInput();
+        }
     }
 
+    /**
+     *   Ausführen der Train Methode anhand eines von Hand kategoriesierten Datensatzes.
+     *   Ändern der "Iterations" und des "Cutoffs" um Parameter des Modells zu ändern
+     *   Iterations steht für die Trainingsiterationen, Cutoff für die Häufigkeit mit der
+     *   ein Wort im Datensatz (hier train2.tsv) vorkommen muss damit es für das Training berücksichtig wird.
+     *   Bei Cutoff 10 werden 10.160 Tokens nicht berücksichtig. Siehe "Dropped event 1:[bow=xxx]"
+     * */
     public void trainModel() {
-        File file = new File ("ressources/train2.tsv");
+        File file = new File(RES + "train2.tsv");
         MarkableFileInputStreamFactory dataIn = null;
         try {
             dataIn = new MarkableFileInputStreamFactory(file);
             ObjectStream lineStream = new PlainTextByLineStream(dataIn, "UTF-8");
             ObjectStream sampleStream = new DocumentSampleStream(lineStream);
 
-            //Finden der Problem line von Hr Eckert
-          /* String sampleString;
-            int ln = 0;
-            while ((sampleString = (String) lineStream.read())!=null){
-
-                String[] tokens = WhitespaceTokenizer.INSTANCE.tokenize(sampleString);
-                if (tokens.length > 1) {
-                    ln++;
-                } else {
-                    throw new IOException("Empty lines, or lines with only a category string are not allowed! AND THE TOKEN IS: " + tokens[0] + " AT THE FUCKING LINE " + ln);
-                }
-            }*/
-
-                TrainingParameters mlParams = new TrainingParameters();
-                mlParams.put("Algorithm", "MAXENT");
-                mlParams.put("TrainerType", "Event");
-                mlParams.put("Iterations", Integer.toString(300));
-                mlParams.put("Cutoff", Integer.toString(10));
+            TrainingParameters mlParams = new TrainingParameters();
+            mlParams.put("Algorithm", "MAXENT");
+            mlParams.put("TrainerType", "Event");
+            mlParams.put("Iterations", "300");
+            mlParams.put("Cutoff", "10");
 
             model = DocumentCategorizerME.train("en", sampleStream, mlParams, new DoccatFactory());
         } catch (IOException e) {
@@ -60,81 +64,55 @@ public class OpenNLPCategorizer {
         }
     }
 
+    /**
+     *  Physische Speicherung des tranierten Modells auf Festplatte
+     *  Achtung: Aus Performancegründen wird das Physische Modell jedoch nicht weiter benutzt!
+     * */
     public void catModel() {
-        OutputStream modelOut = null;
-        try {
-            modelOut = new BufferedOutputStream(new FileOutputStream("ressources/twitterSen.bin"));
+        try (OutputStream modelOut = new BufferedOutputStream(new FileOutputStream(RES + "twitterSen.bin"))) {
             model.serialize(modelOut);
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            if (modelOut != null) {
-                try {
-                    modelOut.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 
+    /**
+     *  Einlesen des Datensatzes welcher einer Sentiment Analyse durchgeführt werden soll.
+     *  Hier Tweets von Trump.
+     *  Methode führt nach Einlesen catOutput Methode aus.
+     * */
     public void catInput() {
-        try{
-            FileInputStream filestream = new FileInputStream("ressources/trumptweetsclean.txt");
-            DataInputStream in = new DataInputStream(filestream);
-            BufferedReader br = new BufferedReader(new InputStreamReader(in));
-
-            while ((inputText = br.readLine()) != null)   {
-                    catOutput(inputText);
+        try (FileInputStream filestream = new FileInputStream(RES + "trumptweetsclean.txt");
+             DataInputStream in = new DataInputStream(filestream);
+             BufferedReader br = new BufferedReader(new InputStreamReader(in))) {
+            String inputText = null;
+            while ((inputText = br.readLine()) != null) {
+                catOutput(inputText);
             }
-            in.close();
-
-        }catch (Exception e){
-            System.err.println("Error: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
+    /**
+     *  Ausgabe der fertigen Sentiment Analyse, jeder Tweet erhält in einer seperaten Spalte der csv eine Sentiment Kategorie
+     *  Hier: 0 bis 4, wobei 0 für Negativ steht, 4 für Positiv.
+     *  Consolenausgabe und CSV-Ausgabe sind nicht identisch!
+     *  In CSV Datei wird ausschließlich diejenige Kategorie ausgegeben welcher der Algorithmus als wahrscheinlichster Wert sieht.
+     *  In der Consolen Ausgabe werden sämtliche mögliche Kategorien, einschließlich deren Wahrscheinlichkeiten ausgegeben.
+     * */
     public void catOutput(String inputText) {
-
-        InputStream modelIn = null;
-        try {
-            PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter("ressources/testbewertet.csv", true)));
-            modelIn = new FileInputStream("ressources/twitterSen.bin");
-            model = new DoccatModel(modelIn);
+        try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(RES + "testbewertet.csv", true)))) {
             DocumentCategorizerME myCategorizer = new DocumentCategorizerME(model);
             double[] outcomes = myCategorizer.categorize(inputText);
 
             String category = myCategorizer.getBestCategory(outcomes);
             String outcome = myCategorizer.getAllResults(outcomes);
 
-            if (category.equalsIgnoreCase("0")) {
-                pw.append(inputText + ";0\n");
-                System.out.println(inputText + ": Category: 0 - The tweet is negative with a possibility of: " + outcome);
-            } else if (category.equalsIgnoreCase("1")) {
-                pw.append(inputText + ";1\n");
-                System.out.println(inputText + ": Category: 1 - The tweet is somewhat negative with a possibility of: " + outcome);
-            } else if (category.equalsIgnoreCase("2")) {
-                pw.append(inputText + ";2\n");
-                System.out.println(inputText + ": Category: 2 - The tweet is neutral with a possibility of: " + outcome);
-            } else if (category.equalsIgnoreCase("3")) {
-                pw.append(inputText + ";3\n");
-                System.out.println(inputText + ": Category: 3 - The tweet is somewhat positive with a possibility of: " + outcome);
-            } else if (category.equalsIgnoreCase("4")) {
-                pw.append(inputText + ";4\n");
-                System.out.println(inputText + ": Category: 4 - The tweet is positive with a possibility of: " + outcome);
-            }
-
-            pw.close();
+            pw.append(inputText + ";" + category + "\n");
+            System.out.println(inputText + "\n\tCategory: " + category + " (" + outcome + ")\n");
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-            if (modelIn != null) {
-                try {
-                    modelIn.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
 }

@@ -1,11 +1,9 @@
-package main.java;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import twitter4j.Paging;
@@ -15,11 +13,10 @@ import twitter4j.TwitterFactory;
 import twitter4j.conf.ConfigurationBuilder;
 
 public class TwitterTweets {
-
 	public void getAllTweets() {
-
 		ConfigurationBuilder cf = new ConfigurationBuilder();
 
+		//Twitter Keys hier einfügen
 		cf.setDebugEnabled(true).setOAuthConsumerKey("").setOAuthConsumerSecret("").setOAuthAccessToken("")
 				.setOAuthAccessTokenSecret("");
 
@@ -37,11 +34,9 @@ public class TwitterTweets {
 		String tweetsClinton;
 
 		while (true) {
-
 			try {
-
-				int size = allTweetsClinton.size();
-				int sizes = allTweetsTrump.size();
+				int clintonSize = allTweetsClinton.size();
+				int trumpSize = allTweetsTrump.size();
 
 				/*
 				 * Paging page = new Paging(pageno++, 200); pageno++ --> damit
@@ -69,40 +64,30 @@ public class TwitterTweets {
 					allTweetsTrump.add(tweetsTrump);
 				}
 
-				if (allTweetsClinton.size() == size && allTweetsTrump.size() == sizes)
+				if (allTweetsClinton.size() == clintonSize && allTweetsTrump.size() == trumpSize)
 					break;
-
 			} catch (TwitterException e) {
 				e.printStackTrace();
 			}
 		}
 
-		listInDatei(allTweetsTrump, new File("ressources/trumptweetswithRT.txt"));
-		listInDatei(allTweetsClinton, new File("ressources/clintontweetswithRT.txt"));
+		listInDatei(allTweetsTrump, new File(OpenNLPCategorizer.RES + "trumptweetswithRT.txt"));
+		listInDatei(allTweetsClinton, new File(OpenNLPCategorizer.RES + "clintontweetswithRT.txt"));
+
+		CleanTweets cleanTweets = new CleanTweets();
+		cleanTweets.cleanTweets();
 	}
 
-	/*
-	 * Liste mit Tweets von Trump in .txt Datei ausgeben
+	/**
+	 * Liste mit Tweets in .txt Datei ausgeben
 	 */
-	private static void listInDatei(List list, File datei) {
-
-		PrintWriter printWriter = null;
-		try {
-			printWriter = new PrintWriter(new FileWriter(datei));
-			Iterator iter = list.iterator();
-			while (iter.hasNext()) {
-				Object o = iter.next();
-				printWriter.println(o);
+	private static void listInDatei(List<String> list, File datei) {
+		try (PrintWriter printWriter = new PrintWriter(new FileWriter(datei))) {
+			for (String s : list) {
+				printWriter.println(s);
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally {
-			if (printWriter != null)
-				printWriter.close();
-
 		}
-
-		CleanTweets cleantweets = new CleanTweets();
-		cleantweets.cleanTweets();
 	}
 }
